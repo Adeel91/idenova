@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/Adeel91/idenova/services/verification/internal/application"
@@ -39,10 +40,12 @@ func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"id":     request.ID,
 		"status": "PENDING",
-	})
+	}); err != nil {
+		log.Printf("failed to encode create response: %v", err)
+	}
 }
 
 func (h *Handler) GetVerification(w http.ResponseWriter, r *http.Request) {
@@ -55,5 +58,7 @@ func (h *Handler) GetVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(verification)
+	if err := json.NewEncoder(w).Encode(verification); err != nil {
+		log.Printf("failed to encode verification response: %v", err)
+	}
 }
