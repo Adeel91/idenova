@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"os"
 
-	httpadapter "github.com/Adeel91/idenova/services/verification/internal/adapters/http"
-	"github.com/Adeel91/idenova/services/verification/internal/adapters/postgres"
-	"github.com/Adeel91/idenova/services/verification/internal/adapters/postgres/db"
-	"github.com/Adeel91/idenova/services/verification/internal/application"
+	httpadapter "idenova/verification/internal/adapters/http"
+	"idenova/verification/internal/adapters/postgres"
+	"idenova/verification/internal/adapters/postgres/db"
+	"idenova/verification/internal/application"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

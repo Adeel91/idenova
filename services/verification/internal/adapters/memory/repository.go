@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/Adeel91/idenova/services/verification/internal/domain"
+	"idenova/verification/internal/domain"
 )
 
 type Repository struct {

@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/Adeel91/idenova/services/verification/internal/adapters/postgres/db"
-	"github.com/Adeel91/idenova/services/verification/internal/domain"
+	"idenova/verification/internal/adapters/postgres/db"
+	"idenova/verification/internal/domain"
 )
 
 type Repository struct {

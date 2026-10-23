@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Adeel91/idenova/services/verification/internal/application"
+	"idenova/verification/internal/application"
 )
 
 type Handler struct {

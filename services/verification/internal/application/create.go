@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Adeel91/idenova/services/verification/internal/domain"
-	"github.com/Adeel91/idenova/services/verification/internal/ports"
+	"idenova/verification/internal/domain"
+	"idenova/verification/internal/ports"
 )
 
 type CreateVerification struct {

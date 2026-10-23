@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/Adeel91/idenova/services/verification/internal/domain"
+	"idenova/verification/internal/domain"
 )
 
 type VerificationRepository interface {

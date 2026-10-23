@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Adeel91/idenova/services/verification/internal/adapters/memory"
-	"github.com/Adeel91/idenova/services/verification/internal/domain"
+	"idenova/verification/internal/adapters/memory"
+	"idenova/verification/internal/domain"
 )
 
 func TestCreateVerification(t *testing.T) {
