@@ -28,6 +28,10 @@ func (r *Repository) Save(ctx context.Context, v *domain.Verification) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if _, exists := r.data[v.ID]; exists {
+		return domain.ErrDuplicate
+	}
+
 	copy := *v
 	r.data[v.ID] = &copy
 	return nil
@@ -43,7 +47,7 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Verificat
 
 	v, exists := r.data[id]
 	if !exists {
-		return nil, errors.New("verification not found")
+		return nil, domain.ErrNotFound
 	}
 
 	copy := *v
@@ -59,7 +63,7 @@ func (r *Repository) Update(ctx context.Context, v *domain.Verification) error {
 	defer r.mu.Unlock()
 
 	if _, exists := r.data[v.ID]; !exists {
-		return errors.New("verification not found")
+		return domain.ErrNotFound
 	}
 
 	copy := *v

@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	"idenova/verification/internal/domain"
 	"idenova/verification/internal/ports"
@@ -18,7 +17,7 @@ func NewCreateVerification(repo ports.VerificationRepository) *CreateVerificatio
 
 func (uc *CreateVerification) Execute(ctx context.Context, id, customerID string) error {
 	if id == "" || customerID == "" {
-		return errors.New("verification ID and customer ID are required")
+		return domain.ErrInvalidInput
 	}
 
 	verification := &domain.Verification{

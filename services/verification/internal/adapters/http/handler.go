@@ -33,13 +33,13 @@ func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		writeError(w, domain.ErrInvalidInput)
 		return
 	}
 
 	err := h.create.Execute(r.Context(), request.ID, request.CustomerID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *Handler) GetVerification(w http.ResponseWriter, r *http.Request) {
 
 	verification, err := h.get.Execute(r.Context(), id)
 	if err != nil {
-		http.Error(w, "Verification not found", http.StatusNotFound)
+		writeError(w, err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *Handler) UpdateVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		writeError(w, domain.ErrInvalidInput)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (h *Handler) UpdateVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.update.Execute(r.Context(), id, request.Status); err != nil {
-		http.Error(w, err.Error(), http.StatusConflict)
+		writeError(w, err)
 		return
 	}
 
@@ -104,7 +104,7 @@ func (h *Handler) ListVerifications(w http.ResponseWriter, r *http.Request) {
 	if value := query.Get("limit"); value != "" {
 		n, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			http.Error(w, "Invalid limit", http.StatusBadRequest)
+			writeError(w, domain.ErrInvalidInput)
 			return
 		}
 		limit = int32(n)
@@ -113,7 +113,7 @@ func (h *Handler) ListVerifications(w http.ResponseWriter, r *http.Request) {
 	if value := query.Get("offset"); value != "" {
 		n, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			http.Error(w, "Invalid offset", http.StatusBadRequest)
+			writeError(w, domain.ErrInvalidInput)
 			return
 		}
 		offset = int32(n)
@@ -128,7 +128,7 @@ func (h *Handler) ListVerifications(w http.ResponseWriter, r *http.Request) {
 
 	results, err := h.list.Execute(r.Context(), status, limit, offset)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, err)
 		return
 	}
 

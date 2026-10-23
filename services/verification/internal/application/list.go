@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	"idenova/verification/internal/domain"
 	"idenova/verification/internal/ports"
@@ -22,14 +21,14 @@ func (uc *ListVerifications) Execute(
 	limit, offset int32,
 ) ([]domain.Verification, error) {
 	if limit < 1 || limit > 100 || offset < 0 {
-		return nil, errors.New("invalid pagination parameters")
+		return nil, domain.ErrInvalidInput
 	}
 
 	if status != nil &&
 		*status != domain.StatusPending &&
 		*status != domain.StatusApproved &&
 		*status != domain.StatusRejected {
-		return nil, errors.New("invalid verification status")
+		return nil, domain.ErrInvalidStatus
 	}
 
 	return uc.repo.List(ctx, status, limit, offset)

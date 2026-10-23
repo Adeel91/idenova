@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -61,6 +62,12 @@ func TestRepositoryIntegration(t *testing.T) {
 
 	if err := repo.Save(ctx, verification); err != nil {
 		t.Fatalf("create failed: %v", err)
+	}
+
+	err = repo.Save(ctx, verification)
+
+	if !errors.Is(err, domain.ErrDuplicate) {
+		t.Fatalf("expected ErrDuplicate, got %v", err)
 	}
 
 	// GET

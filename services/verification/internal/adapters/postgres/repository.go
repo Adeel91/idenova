@@ -7,6 +7,8 @@ import (
 	"idenova/verification/internal/adapters/postgres/db"
 	"idenova/verification/internal/domain"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -19,15 +21,30 @@ func NewRepository(queries *db.Queries) *Repository {
 }
 
 func (r *Repository) Save(ctx context.Context, v *domain.Verification) error {
-	return r.queries.CreateVerification(ctx, db.CreateVerificationParams{
+	err := r.queries.CreateVerification(ctx, db.CreateVerificationParams{
 		ID:         v.ID,
 		CustomerID: v.CustomerID,
 		Status:     string(v.Status),
 	})
+
+	if err == nil {
+		return nil
+	}
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return domain.ErrDuplicate
+	}
+
+	return err
 }
 
 func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Verification, error) {
 	result, err := r.queries.GetVerification(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +69,7 @@ func (r *Repository) Update(ctx context.Context, v *domain.Verification) error {
 	}
 
 	if rows == 0 {
-		return errors.New("verification not found or no longer pending")
+		return domain.ErrInvalidTransition
 	}
 
 	return nil
