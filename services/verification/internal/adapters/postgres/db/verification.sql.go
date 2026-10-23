@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVerification = `-- name: CreateVerification :exec
@@ -41,6 +43,47 @@ func (q *Queries) GetVerification(ctx context.Context, id string) (Verification,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listVerifications = `-- name: ListVerifications :many
+SELECT id, customer_id, status, created_at
+FROM verifications
+WHERE ($1::text IS NULL
+       OR status = $1::text)
+ORDER BY created_at DESC, id DESC
+LIMIT $3::int
+OFFSET $2::int
+`
+
+type ListVerificationsParams struct {
+	Status pgtype.Text
+	Offset int32
+	Limit  int32
+}
+
+func (q *Queries) ListVerifications(ctx context.Context, arg ListVerificationsParams) ([]Verification, error) {
+	rows, err := q.db.Query(ctx, listVerifications, arg.Status, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Verification
+	for rows.Next() {
+		var i Verification
+		if err := rows.Scan(
+			&i.ID,
+			&i.CustomerID,
+			&i.Status,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateVerificationStatus = `-- name: UpdateVerificationStatus :execrows

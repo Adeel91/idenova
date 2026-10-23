@@ -34,12 +34,14 @@ func main() {
 	repo := postgres.NewRepository(db.New(pool))
 	createUseCase := application.NewCreateVerification(repo)
 	getUseCase := application.NewGetVerification(repo)
+	listUseCase := application.NewListVerifications(repo)
 	updateUseCase := application.NewUpdateVerification(repo)
-	handler := httpadapter.NewHandler(createUseCase, getUseCase, updateUseCase)
+	handler := httpadapter.NewHandler(createUseCase, getUseCase, listUseCase, updateUseCase)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /verifications", handler.CreateVerification)
 	mux.HandleFunc("GET /verifications/{id}", handler.GetVerification)
+	mux.HandleFunc("GET /verifications", handler.ListVerifications)
 	mux.HandleFunc("PATCH /verifications/{id}/status", handler.UpdateVerification)
 
 	log.Println("Verification Service running on :8080")

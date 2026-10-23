@@ -6,6 +6,8 @@ import (
 
 	"idenova/verification/internal/adapters/postgres/db"
 	"idenova/verification/internal/domain"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Repository struct {
@@ -54,4 +56,39 @@ func (r *Repository) Update(ctx context.Context, v *domain.Verification) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) List(
+	ctx context.Context,
+	status *domain.VerificationStatus,
+	limit, offset int32,
+) ([]domain.Verification, error) {
+	params := db.ListVerificationsParams{
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	if status != nil {
+		params.Status = pgtype.Text{
+			String: string(*status),
+			Valid:  true,
+		}
+	}
+
+	rows, err := r.queries.ListVerifications(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	verifications := make([]domain.Verification, 0, len(rows))
+
+	for _, row := range rows {
+		verifications = append(verifications, domain.Verification{
+			ID:         row.ID,
+			CustomerID: row.CustomerID,
+			Status:     domain.VerificationStatus(row.Status),
+		})
+	}
+
+	return verifications, nil
 }

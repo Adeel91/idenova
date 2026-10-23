@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"idenova/verification/internal/application"
 	"idenova/verification/internal/domain"
@@ -13,14 +14,16 @@ type Handler struct {
 	create *application.CreateVerification
 	get    *application.GetVerification
 	update *application.UpdateVerification
+	list   *application.ListVerifications
 }
 
 func NewHandler(
 	create *application.CreateVerification,
 	get *application.GetVerification,
+	list *application.ListVerifications,
 	update *application.UpdateVerification,
 ) *Handler {
-	return &Handler{create: create, get: get, update: update}
+	return &Handler{create: create, get: get, update: update, list: list}
 }
 
 func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
@@ -90,4 +93,48 @@ func (h *Handler) UpdateVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) ListVerifications(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	limit := int32(10)
+	offset := int32(0)
+
+	if value := query.Get("limit"); value != "" {
+		n, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			http.Error(w, "Invalid limit", http.StatusBadRequest)
+			return
+		}
+		limit = int32(n)
+	}
+
+	if value := query.Get("offset"); value != "" {
+		n, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			http.Error(w, "Invalid offset", http.StatusBadRequest)
+			return
+		}
+		offset = int32(n)
+	}
+
+	var status *domain.VerificationStatus
+
+	if value := query.Get("status"); value != "" {
+		s := domain.VerificationStatus(value)
+		status = &s
+	}
+
+	results, err := h.list.Execute(r.Context(), status, limit, offset)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(results); err != nil {
+		log.Printf("failed to encode verifications: %v", err)
+	}
 }
