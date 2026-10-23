@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/Adeel91/idenova/services/verification/internal/domain"
@@ -31,15 +32,19 @@ func (r *Repository) Save(ctx context.Context, v *domain.Verification) error {
 	return nil
 }
 
-func (r *Repository) FindByID(id string) (*domain.Verification, bool) {
+func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Verification, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	v, exists := r.data[id]
 	if !exists {
-		return nil, false
+		return nil, errors.New("verification not found")
 	}
 
 	copy := *v
-	return &copy, true
+	return &copy, nil
 }

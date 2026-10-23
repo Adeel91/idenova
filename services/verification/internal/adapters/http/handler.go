@@ -9,10 +9,14 @@ import (
 
 type Handler struct {
 	create *application.CreateVerification
+	get    *application.GetVerification
 }
 
-func NewHandler(create *application.CreateVerification) *Handler {
-	return &Handler{create: create}
+func NewHandler(
+	create *application.CreateVerification,
+	get *application.GetVerification,
+) *Handler {
+	return &Handler{create: create, get: get}
 }
 
 func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
@@ -39,4 +43,17 @@ func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
 		"id":     request.ID,
 		"status": "PENDING",
 	})
+}
+
+func (h *Handler) GetVerification(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	verification, err := h.get.Execute(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Verification not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(verification)
 }

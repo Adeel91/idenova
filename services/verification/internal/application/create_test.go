@@ -22,10 +22,13 @@ func TestCreateVerification(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	saved, exists := repo.FindByID("verification-123")
+	saved, err := repo.FindByID(
+		context.Background(),
+		"verification-123",
+	)
 
-	if !exists {
-		t.Fatal("verification was not saved")
+	if err != nil {
+		t.Fatalf("verification was not saved: %v", err)
 	}
 
 	if saved.ID != "verification-123" {
