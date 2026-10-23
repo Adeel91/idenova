@@ -42,3 +42,22 @@ func (q *Queries) GetVerification(ctx context.Context, id string) (Verification,
 	)
 	return i, err
 }
+
+const updateVerificationStatus = `-- name: UpdateVerificationStatus :execrows
+UPDATE verifications
+SET status = $2
+WHERE id = $1 AND status = 'PENDING'
+`
+
+type UpdateVerificationStatusParams struct {
+	ID     string
+	Status string
+}
+
+func (q *Queries) UpdateVerificationStatus(ctx context.Context, arg UpdateVerificationStatusParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateVerificationStatus, arg.ID, arg.Status)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

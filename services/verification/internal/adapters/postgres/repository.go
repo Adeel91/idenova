@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"idenova/verification/internal/adapters/postgres/db"
 	"idenova/verification/internal/domain"
@@ -34,4 +35,23 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Verificat
 		CustomerID: result.CustomerID,
 		Status:     domain.VerificationStatus(result.Status),
 	}, nil
+}
+
+func (r *Repository) Update(ctx context.Context, v *domain.Verification) error {
+	rows, err := r.queries.UpdateVerificationStatus(
+		ctx,
+		db.UpdateVerificationStatusParams{
+			ID:     v.ID,
+			Status: string(v.Status),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("verification not found or no longer pending")
+	}
+
+	return nil
 }

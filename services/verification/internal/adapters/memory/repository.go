@@ -48,3 +48,21 @@ func (r *Repository) FindByID(ctx context.Context, id string) (*domain.Verificat
 	copy := *v
 	return &copy, nil
 }
+
+func (r *Repository) Update(ctx context.Context, v *domain.Verification) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.data[v.ID]; !exists {
+		return errors.New("verification not found")
+	}
+
+	copy := *v
+	r.data[v.ID] = &copy
+
+	return nil
+}

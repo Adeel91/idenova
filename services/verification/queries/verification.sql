@@ -6,3 +6,8 @@ VALUES ($1, $2, $3);
 SELECT id, customer_id, status, created_at
 FROM verifications
 WHERE id = $1;
+
+-- name: UpdateVerificationStatus :execrows
+UPDATE verifications
+SET status = $2
+WHERE id = $1 AND status = 'PENDING';
