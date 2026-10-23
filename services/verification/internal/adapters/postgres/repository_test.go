@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
 	"idenova/verification/internal/adapters/postgres/db"
 	"idenova/verification/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -130,5 +132,84 @@ func TestRepositoryIntegration(t *testing.T) {
 	_, err = repo.FindByID(ctx, id+"_missing")
 	if err == nil {
 		t.Fatal("expected error for missing verification")
+	}
+}
+
+func TestConcurrentStatusUpdates(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL not set")
+	}
+
+	ctx := context.Background()
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+
+	queries := db.New(pool)
+	repo := NewRepository(queries)
+
+	verification := &domain.Verification{
+		ID:         "concurrent-test-" + uuid.NewString(),
+		CustomerID: "customer-123",
+		Status:     domain.StatusPending,
+	}
+
+	if err := repo.Save(ctx, verification); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(),
+			"DELETE FROM verifications WHERE id = $1",
+			verification.ID,
+		)
+	})
+
+	var wg sync.WaitGroup
+	results := make(chan error, 2)
+
+	for _, status := range []domain.VerificationStatus{
+		domain.StatusApproved,
+		domain.StatusRejected,
+	} {
+		wg.Add(1)
+
+		go func(status domain.VerificationStatus) {
+			defer wg.Done()
+
+			updated := *verification
+			updated.Status = status
+
+			results <- repo.Update(ctx, &updated)
+		}(status)
+	}
+
+	wg.Wait()
+	close(results)
+
+	successCount := 0
+	conflictCount := 0
+
+	for err := range results {
+		switch {
+		case err == nil:
+			successCount++
+		case errors.Is(err, domain.ErrInvalidTransition):
+			conflictCount++
+		default:
+			t.Fatalf("unexpected update error: %v", err)
+		}
+	}
+
+	if successCount != 1 || conflictCount != 1 {
+		t.Fatalf(
+			"expected one success and one conflict, got %d successes and %d conflicts",
+			successCount,
+			conflictCount,
+		)
 	}
 }
