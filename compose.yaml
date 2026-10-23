@@ -10,6 +10,16 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  postgres_test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: idenova
+      POSTGRES_PASSWORD: localtest
+      POSTGRES_DB: verification_test
+    ports:
+      - "127.0.0.1:5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
 
 volumes:
   postgres_data:
