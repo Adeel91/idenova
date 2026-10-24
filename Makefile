@@ -1,5 +1,5 @@
 
-GO_SERVICES := services/verification services/identity
+GO_SERVICES := services/document services/identity services/verification
 
 .PHONY: fmt vet lint test check
 

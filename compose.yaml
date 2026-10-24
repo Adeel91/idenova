@@ -47,7 +47,34 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
 
+  document-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: idenova
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: document
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - document_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idenova -d document"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  document-db-test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: idenova
+      POSTGRES_PASSWORD: localtest
+      POSTGRES_DB: document_test
+    ports:
+      - "127.0.0.1:5437:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
 
 volumes:
   postgres_data:
   identity_db_data:
+  document_db_data:
