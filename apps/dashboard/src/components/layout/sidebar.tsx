@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const navigation = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -18,7 +19,14 @@ const navigation = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+type SidebarProps = {
+  user: {
+    name: string;
+    email: string;
+  };
+};
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -58,8 +66,21 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-slate-200 pt-5 text-xs text-slate-400">
-        Idenova · Development
+      <div className="mt-auto space-y-3 border-t border-slate-200 pt-5">
+        <div className="px-3">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {user.name}
+          </p>
+          <p className="truncate text-xs text-slate-500">
+            {user.email}
+          </p>
+        </div>
+
+        <LogoutButton />
+
+        <p className="px-3 text-xs text-slate-400">
+          Idenova · Development
+        </p>
       </div>
     </aside>
   );

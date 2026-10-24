@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccessToken } from "@/lib/server/access-token";
 
 const DOCUMENT_API_URL =
   process.env.DOCUMENT_API_URL ?? "http://127.0.0.1:8083";
@@ -40,6 +41,15 @@ export async function PATCH(request: Request, { params }: Context) {
     );
   }
 
+  const accessToken = await getAccessToken(request);
+
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please sign in again." },
+      { status: 401 },
+    );
+  }
+
   try {
     const response = await fetch(
       `${DOCUMENT_API_URL}/documents/${encodeURIComponent(id)}/status`,
@@ -47,6 +57,7 @@ export async function PATCH(request: Request, { params }: Context) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ status: body.status }),
         cache: "no-store",

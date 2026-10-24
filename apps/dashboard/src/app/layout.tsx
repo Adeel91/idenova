@@ -1,7 +1,6 @@
-
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { AuthenticatedSidebar } from "@/components/layout/authenticated-sidebar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +22,7 @@ export default function RootLayout({
               <aside className="w-64 shrink-0 border-r border-slate-200 bg-white" />
             }
           >
-            <Sidebar />
+            <AuthenticatedSidebar />
           </Suspense>
 
           <main className="min-w-0 flex-1 bg-[#f8fafc] p-6 lg:p-10">

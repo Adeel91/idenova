@@ -14,6 +14,8 @@ import (
 	"idenova/document/internal/adapters/verificationhttp"
 	"idenova/document/internal/application"
 
+	"idenova/auth"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -44,11 +46,15 @@ func run() error {
 		application.NewUpdateDocument(repo),
 	)
 
+	serviceClient, err := auth.NewServiceHTTPClient()
+	if err != nil {
+		return err
+	}
 	handler.SetIdempotentCreation(
 		application.NewCreateDocumentIdempotent(
 			postgres.NewIdempotencyStore(
 				pool,
-				verificationhttp.NewReader("http://127.0.0.1:8080"),
+				verificationhttp.NewReader("http://127.0.0.1:8080", serviceClient),
 			),
 		),
 	)

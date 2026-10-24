@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -14,6 +15,8 @@ import { statusStyles } from "@/lib/mock-verifications";
 export const instant = false;
 
 export default async function DashboardPage() {
+  await connection();
+
   const verifications = await getVerifications();
 
   const pending = verifications.filter(

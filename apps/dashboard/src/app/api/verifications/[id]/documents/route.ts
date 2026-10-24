@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccessToken } from "@/lib/server/access-token";
 
 const DOCUMENT_API_URL =
   process.env.DOCUMENT_API_URL ?? "http://127.0.0.1:8083";
@@ -56,11 +57,21 @@ export async function POST(request: Request, { params }: Context) {
     );
   }
 
+  const accessToken = await getAccessToken(request);
+
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please sign in again." },
+      { status: 401 },
+    );
+  }
+
   try {
     const response = await fetch(`${DOCUMENT_API_URL}/documents`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
         "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({

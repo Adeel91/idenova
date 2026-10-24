@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"idenova/auth"
 	"idenova/verification/internal/adapters/documenthttp"
 	httpadapter "idenova/verification/internal/adapters/http"
 	"idenova/verification/internal/adapters/postgres"
@@ -41,7 +42,12 @@ func main() {
 		documentServiceURL = "http://127.0.0.1:8083"
 	}
 
-	documentReader := documenthttp.NewReader(documentServiceURL)
+	serviceClient, err := auth.NewServiceHTTPClient()
+	if err != nil {
+		log.Printf("Failed to initialize service HTTP client: %v", err)
+		return
+	}
+	documentReader := documenthttp.NewReader(documentServiceURL, serviceClient)
 
 	updateUseCase := application.NewUpdateVerification(repo, documentReader)
 	handler := httpadapter.NewHandler(createUseCase, getUseCase, listUseCase, updateUseCase)
@@ -52,11 +58,34 @@ func main() {
 		),
 	)
 
+	issuer := "http://localhost:8085/realms/idenova"
+
+	verifier, err := auth.NewVerifier(
+		context.Background(),
+		issuer,
+		"idenova-api",
+		issuer+"/protocol/openid-connect/certs",
+	)
+	if err != nil {
+		log.Printf("Keycloak JWT verifier initialization failed: %v", err)
+		return
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /verifications", handler.CreateVerification)
+	mux.Handle(
+		"POST /verifications",
+		verifier.RequireRoles("ADMIN", "REVIEWER")(
+			http.HandlerFunc(handler.CreateVerification),
+		),
+	)
 	mux.HandleFunc("GET /verifications/{id}", handler.GetVerification)
 	mux.HandleFunc("GET /verifications", handler.ListVerifications)
-	mux.HandleFunc("PATCH /verifications/{id}/status", handler.UpdateVerification)
+	mux.Handle(
+		"PATCH /verifications/{id}/status",
+		verifier.RequireRoles("ADMIN", "REVIEWER")(
+			http.HandlerFunc(handler.UpdateVerification),
+		),
+	)
 
 	log.Println("Verification Service running on :8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {

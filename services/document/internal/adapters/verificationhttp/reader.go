@@ -17,12 +17,15 @@ type Reader struct {
 	client  *http.Client
 }
 
-func NewReader(baseURL string) *Reader {
+func NewReader(baseURL string, client ...*http.Client) *Reader {
+	httpClient := &http.Client{Timeout: 5 * time.Second}
+	if len(client) > 0 && client[0] != nil {
+		httpClient = client[0]
+	}
+
 	return &Reader{
 		baseURL: strings.TrimRight(baseURL, "/"),
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-		},
+		client:  httpClient,
 	}
 }
 
