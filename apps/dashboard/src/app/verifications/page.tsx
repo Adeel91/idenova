@@ -65,7 +65,12 @@ export default async function VerificationsPage() {
                   className="hover:bg-slate-50"
                 >
                   <td className="px-6 py-4 font-medium text-slate-900">
-                    {verification.id}
+                    <Link
+                        href={`/verifications/${encodeURIComponent(verification.id)}`}
+                        className="text-indigo-600 hover:underline"
+                        >
+                        {verification.id}
+                    </Link>
                   </td>
 
                   <td className="px-6 py-4 text-slate-600">
