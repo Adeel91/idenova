@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import {
   ArrowRight,
@@ -9,12 +8,14 @@ import {
   XCircle,
 } from "lucide-react";
 
-import {
-  verifications,
-  statusStyles,
-} from "@/lib/mock-verifications";
+import { getVerifications } from "@/lib/verifications";
+import { statusStyles } from "@/lib/mock-verifications";
 
-export default function DashboardPage() {
+export const instant = false;
+
+export default async function DashboardPage() {
+  const verifications = await getVerifications();
+
   const pending = verifications.filter(
     (verification) => verification.status === "PENDING",
   ).length;
@@ -61,9 +62,11 @@ export default function DashboardPage() {
           <p className="mb-1 text-sm font-medium text-indigo-600">
             Overview
           </p>
+
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Dashboard
           </h1>
+
           <p className="mt-2 text-sm text-slate-500">
             Monitor and manage your identity verifications.
           </p>
@@ -94,8 +97,10 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-slate-500">
                   {stat.label}
                 </p>
+
                 <Icon size={20} className={stat.color} />
               </div>
+
               <p className="mt-4 text-3xl font-bold text-slate-900">
                 {stat.value}
               </p>
@@ -110,6 +115,7 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-slate-900">
               Recent verifications
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               Latest verification requests and their statuses
             </p>
@@ -128,14 +134,20 @@ export default function DashboardPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-6 py-4 font-semibold">Verification ID</th>
-                <th className="px-6 py-4 font-semibold">Customer ID</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Created</th>
+                <th className="px-6 py-4 font-semibold">
+                  Verification ID
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Customer ID
+                </th>
+                <th className="px-6 py-4 font-semibold">
+                  Status
+                </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-100">
-              {verifications.map((verification) => (
+              {verifications.slice(0, 5).map((verification) => (
                 <tr
                   key={verification.id}
                   className="hover:bg-slate-50"
@@ -143,9 +155,11 @@ export default function DashboardPage() {
                   <td className="px-6 py-4 font-medium text-slate-900">
                     {verification.id}
                   </td>
+
                   <td className="px-6 py-4 text-slate-600">
                     {verification.customerId}
                   </td>
+
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[verification.status]}`}
@@ -153,19 +167,18 @@ export default function DashboardPage() {
                       {verification.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500">
-                    {verification.createdAt}
-                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {verifications.length === 0 && (
+            <p className="px-6 py-12 text-center text-sm text-slate-500">
+              No verifications yet. Create your first verification.
+            </p>
+          )}
         </div>
       </section>
-
-      <p className="text-xs text-slate-400">
-        Development preview using sample data.
-      </p>
     </div>
   );
 }
