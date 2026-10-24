@@ -1,0 +1,27 @@
+
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+}
+
+html,
+body {
+  background-color: #f8fafc;
+}
+
+main {
+  background-color: #f8fafc;
+}
