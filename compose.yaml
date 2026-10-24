@@ -20,6 +20,34 @@ services:
       - "127.0.0.1:5433:5432"
     tmpfs:
       - /var/lib/postgresql/data
+  
+  identity-db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: idenova
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: identity
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - identity_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idenova -d identity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  identity-db-test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: idenova
+      POSTGRES_PASSWORD: localtest
+      POSTGRES_DB: identity_test
+    ports:
+      - "127.0.0.1:5435:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
 
 volumes:
   postgres_data:
+  identity_db_data:
