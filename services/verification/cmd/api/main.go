@@ -46,6 +46,12 @@ func main() {
 	updateUseCase := application.NewUpdateVerification(repo, documentReader)
 	handler := httpadapter.NewHandler(createUseCase, getUseCase, listUseCase, updateUseCase)
 
+	handler.SetIdempotentCreation(
+		application.NewCreateVerificationIdempotent(
+			postgres.NewIdempotencyStore(pool),
+		),
+	)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /verifications", handler.CreateVerification)
 	mux.HandleFunc("GET /verifications/{id}", handler.GetVerification)

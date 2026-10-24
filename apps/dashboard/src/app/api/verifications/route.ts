@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 
 const VERIFICATION_API_URL =
@@ -30,27 +29,40 @@ export async function POST(request: Request) {
   }
 
   const customerId = body.customerId.trim();
-  const id = `ver_${crypto.randomUUID()}`;
+  const idempotencyKey = request.headers.get("Idempotency-Key");
+
+  if (!idempotencyKey || idempotencyKey.length > 255) {
+    return NextResponse.json(
+      { error: "Valid Idempotency-Key header is required" },
+      { status: 400 },
+    );
+  }
 
   try {
-    const response = await fetch(
-      `${VERIFICATION_API_URL}/verifications`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, customerId }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(10000),
+    const response = await fetch(`${VERIFICATION_API_URL}/verifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
-    );
+      body: JSON.stringify({ customerId }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    });
 
-    const result = await response.json();
+    const result: unknown = await response.json();
 
-    return NextResponse.json(result, {
+    const nextResponse = NextResponse.json(result, {
       status: response.status,
     });
+
+    const replayed = response.headers.get("Idempotency-Replayed");
+
+    if (replayed) {
+      nextResponse.headers.set("Idempotency-Replayed", replayed);
+    }
+
+    return nextResponse;
   } catch {
     return NextResponse.json(
       { error: "Verification Service unavailable" },

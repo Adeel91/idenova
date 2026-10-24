@@ -8,6 +8,7 @@ import (
 
 	"idenova/verification/internal/application"
 	"idenova/verification/internal/domain"
+	"idenova/verification/internal/ports"
 )
 
 func writeError(w http.ResponseWriter, err error) {
@@ -35,6 +36,14 @@ func writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, application.ErrDocumentPolicy):
 		status = http.StatusConflict
 		message = "Document requirements not satisfied"
+
+	case errors.Is(err, application.ErrInvalidIdempotencyKey):
+		status = http.StatusBadRequest
+		message = "Invalid idempotency key"
+
+	case errors.Is(err, ports.ErrIdempotencyConflict):
+		status = http.StatusConflict
+		message = "Idempotency key reused with different request"
 
 	default:
 		log.Printf("unexpected verification error: %v", err)

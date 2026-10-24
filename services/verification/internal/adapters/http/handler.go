@@ -11,10 +11,11 @@ import (
 )
 
 type Handler struct {
-	create *application.CreateVerification
-	get    *application.GetVerification
-	update *application.UpdateVerification
-	list   *application.ListVerifications
+	create           *application.CreateVerification
+	createIdempotent *application.CreateVerificationIdempotent
+	get              *application.GetVerification
+	update           *application.UpdateVerification
+	list             *application.ListVerifications
 }
 
 func NewHandler(
@@ -26,6 +27,12 @@ func NewHandler(
 	return &Handler{create: create, get: get, update: update, list: list}
 }
 
+func (h *Handler) SetIdempotentCreation(
+	useCase *application.CreateVerificationIdempotent,
+) {
+	h.createIdempotent = useCase
+}
+
 func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		ID         string `json:"id"`
@@ -34,6 +41,42 @@ func (h *Handler) CreateVerification(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		writeError(w, domain.ErrInvalidInput)
+		return
+	}
+
+	key := r.Header.Get("Idempotency-Key")
+
+	if key != "" {
+		if h.createIdempotent == nil {
+			http.Error(w, "Idempotency is not configured", http.StatusServiceUnavailable)
+			return
+		}
+
+		result, err := h.createIdempotent.Execute(
+			r.Context(),
+			key,
+			request.CustomerID,
+		)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if result.Replayed {
+			w.Header().Set("Idempotency-Replayed", "true")
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusCreated)
+		}
+
+		if err := json.NewEncoder(w).Encode(map[string]string{
+			"id":     result.ResourceID,
+			"status": "PENDING",
+		}); err != nil {
+			log.Printf("failed to encode idempotent response: %v", err)
+		}
 		return
 	}
 

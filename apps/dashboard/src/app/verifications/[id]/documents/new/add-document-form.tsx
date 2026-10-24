@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { createIdempotencyKey } from "@/lib/idempotency";
 
 const DOCUMENT_TYPES = [
   { value: "SYNTHETIC_ID", label: "Synthetic identity document" },
@@ -22,6 +23,7 @@ export default function AddDocumentPage() {
   const detailsUrl = `/verifications/${encodeURIComponent(verificationId)}`;
 
   const [type, setType] = useState("SYNTHETIC_ID");
+  const idempotencyKey = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,6 +31,10 @@ export default function AddDocumentPage() {
     event.preventDefault();
 
     if (loading) return;
+
+    if (!idempotencyKey.current) {
+      idempotencyKey.current = createIdempotencyKey();
+    }
 
     setLoading(true);
     setError("");
@@ -40,6 +46,7 @@ export default function AddDocumentPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey.current,
           },
           body: JSON.stringify({ type }),
         },
@@ -117,7 +124,11 @@ export default function AddDocumentPage() {
           <select
             id="documentType"
             value={type}
-            onChange={(event) => setType(event.target.value)}
+            onChange={(event) => {
+              setType(event.target.value);
+              idempotencyKey.current = null;
+              setError("");
+            }}
             disabled={loading}
             className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500"
           >

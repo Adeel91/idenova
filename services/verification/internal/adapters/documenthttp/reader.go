@@ -50,7 +50,7 @@ func (r *Reader) ListByVerificationID(
 	if err != nil {
 		return nil, fmt.Errorf("document service request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(

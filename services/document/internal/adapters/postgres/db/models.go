@@ -15,3 +15,11 @@ type Document struct {
 	Status         string
 	CreatedAt      pgtype.Timestamptz
 }
+
+type IdempotencyKey struct {
+	Operation      string
+	IdempotencyKey string
+	RequestHash    string
+	ResourceID     string
+	CreatedAt      pgtype.Timestamptz
+}

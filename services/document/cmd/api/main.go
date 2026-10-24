@@ -11,6 +11,7 @@ import (
 	httpadapter "idenova/document/internal/adapters/http"
 	"idenova/document/internal/adapters/postgres"
 	"idenova/document/internal/adapters/postgres/db"
+	"idenova/document/internal/adapters/verificationhttp"
 	"idenova/document/internal/application"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -41,6 +42,15 @@ func run() error {
 		application.NewGetDocument(repo),
 		application.NewListDocuments(repo),
 		application.NewUpdateDocument(repo),
+	)
+
+	handler.SetIdempotentCreation(
+		application.NewCreateDocumentIdempotent(
+			postgres.NewIdempotencyStore(
+				pool,
+				verificationhttp.NewReader("http://127.0.0.1:8080"),
+			),
+		),
 	)
 
 	mux := http.NewServeMux()

@@ -1,14 +1,16 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { createIdempotencyKey } from "@/lib/idempotency";
 
 export default function NewVerificationPage() {
   const router = useRouter();
 
+  const idempotencyKey = useRef<string | null>(null);
   const [customerId, setCustomerId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,10 +29,15 @@ export default function NewVerificationPage() {
     setError("");
 
     try {
+      if (!idempotencyKey.current) {
+        idempotencyKey.current = createIdempotencyKey();
+      }
+
       const response = await fetch("/api/verifications", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey.current,
         },
         body: JSON.stringify({ customerId: value }),
       });
@@ -111,6 +118,7 @@ export default function NewVerificationPage() {
             value={customerId}
             onChange={(event) => {
               setCustomerId(event.target.value);
+              idempotencyKey.current = null;
               setError("");
             }}
             placeholder="e.g. customer_123"

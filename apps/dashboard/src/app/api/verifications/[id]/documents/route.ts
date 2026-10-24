@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 const DOCUMENT_API_URL =
@@ -20,6 +19,15 @@ export async function POST(request: Request, { params }: Context) {
   if (!verificationId.trim()) {
     return NextResponse.json(
       { error: "Verification ID is required" },
+      { status: 400 },
+    );
+  }
+
+  const idempotencyKey = request.headers.get("Idempotency-Key");
+
+  if (!idempotencyKey || !idempotencyKey.trim()) {
+    return NextResponse.json(
+      { error: "Idempotency-Key header is required" },
       { status: 400 },
     );
   }
@@ -53,9 +61,9 @@ export async function POST(request: Request, { params }: Context) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
-        id: `doc_${randomUUID()}`,
         verificationId,
         type: body.type,
       }),
@@ -65,8 +73,15 @@ export async function POST(request: Request, { params }: Context) {
 
     const result: unknown = await response.json();
 
+    const headers = new Headers();
+
+    if (response.headers.get("Idempotency-Replayed") === "true") {
+      headers.set("Idempotency-Replayed", "true");
+    }
+
     return NextResponse.json(result, {
       status: response.status,
+      headers,
     });
   } catch {
     return NextResponse.json(

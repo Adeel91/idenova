@@ -7,10 +7,23 @@ import (
 	"net/http"
 
 	"idenova/document/internal/domain"
+	"idenova/idempotency"
 )
 
 func handleDomainError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, domain.ErrVerificationNotFound):
+		writeError(w, http.StatusNotFound, "Verification not found")
+
+	case errors.Is(err, domain.ErrVerificationNotPending):
+		writeError(w, http.StatusConflict, "Verification is not pending")
+
+	case errors.Is(err, idempotency.ErrInvalidKey):
+		writeError(w, http.StatusBadRequest, "Invalid idempotency key")
+
+	case errors.Is(err, idempotency.ErrConflict):
+		writeError(w, http.StatusConflict, "Idempotency key already used for a different request")
+
 	case errors.Is(err, domain.ErrInvalidDocument):
 		writeError(w, http.StatusBadRequest, "Invalid document")
 

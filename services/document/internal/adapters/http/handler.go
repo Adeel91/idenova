@@ -9,10 +9,11 @@ import (
 )
 
 type Handler struct {
-	create *application.CreateDocument
-	get    *application.GetDocument
-	list   *application.ListDocuments
-	update *application.UpdateDocument
+	createIdempotent *application.CreateDocumentIdempotent
+	create           *application.CreateDocument
+	get              *application.GetDocument
+	list             *application.ListDocuments
+	update           *application.UpdateDocument
 }
 
 func NewHandler(
@@ -29,6 +30,12 @@ func NewHandler(
 	}
 }
 
+func (h *Handler) SetIdempotentCreation(
+	useCase *application.CreateDocumentIdempotent,
+) {
+	h.createIdempotent = useCase
+}
+
 func (h *Handler) CreateDocument(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		ID             string `json:"id"`
@@ -38,6 +45,45 @@ func (h *Handler) CreateDocument(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if h.createIdempotent != nil &&
+		r.Header.Get("Idempotency-Key") == "" {
+		writeError(w, http.StatusBadRequest, "Idempotency-Key header is required")
+		return
+	}
+
+	if key := r.Header.Get("Idempotency-Key"); key != "" {
+		if h.createIdempotent == nil {
+			writeError(w, http.StatusInternalServerError, "Idempotent creation unavailable")
+			return
+		}
+
+		result, err := h.createIdempotent.Execute(
+			r.Context(),
+			key,
+			request.VerificationID,
+			request.Type,
+		)
+		if err != nil {
+			handleDomainError(w, err)
+			return
+		}
+
+		document, err := h.get.Execute(r.Context(), result.ResourceID)
+		if err != nil {
+			handleDomainError(w, err)
+			return
+		}
+
+		if result.Replayed {
+			w.Header().Set("Idempotency-Replayed", "true")
+			writeJSON(w, http.StatusOK, document)
+			return
+		}
+
+		writeJSON(w, http.StatusCreated, document)
 		return
 	}
 

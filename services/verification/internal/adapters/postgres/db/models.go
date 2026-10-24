@@ -8,6 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type IdempotencyKey struct {
+	Operation      string
+	IdempotencyKey string
+	RequestHash    string
+	ResourceID     string
+	CreatedAt      pgtype.Timestamptz
+}
+
 type Verification struct {
 	ID         string
 	CustomerID string

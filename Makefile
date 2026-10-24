@@ -1,5 +1,5 @@
 
-GO_SERVICES := services/document services/identity services/verification
+GO_SERVICES := services/document services/identity services/verification packages/idempotency
 
 .PHONY: fmt vet lint test check
 
