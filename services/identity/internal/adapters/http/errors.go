@@ -20,6 +20,15 @@ func handleDomainError(w http.ResponseWriter, err error) {
 	case errors.Is(err, domain.ErrOrganizationDuplicate):
 		writeError(w, http.StatusConflict, "Organization already exists")
 
+	case errors.Is(err, domain.ErrInvalidUser):
+		writeError(w, http.StatusBadRequest, "Invalid user")
+
+	case errors.Is(err, domain.ErrUserNotFound):
+		writeError(w, http.StatusNotFound, "User not found")
+
+	case errors.Is(err, domain.ErrUserDuplicate):
+		writeError(w, http.StatusConflict, "User already exists")
+
 	default:
 		log.Printf("unexpected identity error: %v", err)
 		writeError(w, http.StatusInternalServerError, "Internal server error")

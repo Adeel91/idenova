@@ -13,3 +13,11 @@ type Organization struct {
 	Name      string
 	CreatedAt pgtype.Timestamptz
 }
+
+type User struct {
+	ID             string
+	OrganizationID string
+	Email          string
+	Role           string
+	CreatedAt      pgtype.Timestamptz
+}
