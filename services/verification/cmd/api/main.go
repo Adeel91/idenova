@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"idenova/verification/internal/adapters/documenthttp"
 	httpadapter "idenova/verification/internal/adapters/http"
 	"idenova/verification/internal/adapters/postgres"
 	"idenova/verification/internal/adapters/postgres/db"
@@ -35,7 +36,14 @@ func main() {
 	createUseCase := application.NewCreateVerification(repo)
 	getUseCase := application.NewGetVerification(repo)
 	listUseCase := application.NewListVerifications(repo)
-	updateUseCase := application.NewUpdateVerification(repo)
+	documentServiceURL := os.Getenv("DOCUMENT_SERVICE_URL")
+	if documentServiceURL == "" {
+		documentServiceURL = "http://127.0.0.1:8083"
+	}
+
+	documentReader := documenthttp.NewReader(documentServiceURL)
+
+	updateUseCase := application.NewUpdateVerification(repo, documentReader)
 	handler := httpadapter.NewHandler(createUseCase, getUseCase, listUseCase, updateUseCase)
 
 	mux := http.NewServeMux()

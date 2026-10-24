@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { getVerification } from "@/lib/verifications";
-import { getVerificationDocuments } from "@/lib/documents";
-
 const VERIFICATION_API_URL =
   process.env.VERIFICATION_API_URL ?? "http://127.0.0.1:8080";
 
@@ -44,50 +41,13 @@ export async function PATCH(request: Request, { params }: Context) {
   }
 
   try {
-    const verification = await getVerification(id);
-
-    if (!verification) {
-      return NextResponse.json(
-        { error: "Verification not found" },
-        { status: 404 },
-      );
-    }
-
-    if (verification.status !== "PENDING") {
-      return NextResponse.json(
-        { error: "Verification has already been reviewed" },
-        { status: 409 },
-      );
-    }
-
-    const documents = await getVerificationDocuments(id);
-
-    if (body.status === "APPROVED") {
-      if (
-        documents.length === 0 ||
-        documents.some((document) => document.status !== "APPROVED")
-      ) {
-        return NextResponse.json(
-          { error: "All documents must be approved first" },
-          { status: 409 },
-        );
-      }
-    }
-
-    if (body.status === "REJECTED") {
-      if (!documents.some((document) => document.status === "REJECTED")) {
-        return NextResponse.json(
-          { error: "At least one document must be rejected first" },
-          { status: 409 },
-        );
-      }
-    }
-
     const response = await fetch(
       `${VERIFICATION_API_URL}/verifications/${encodeURIComponent(id)}/status`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ status: body.status }),
         cache: "no-store",
         signal: AbortSignal.timeout(10000),
@@ -112,7 +72,7 @@ export async function PATCH(request: Request, { params }: Context) {
         message = result.error;
       }
     } catch {
-      // Keep the default message.
+      // Keep the default error message.
     }
 
     return NextResponse.json(
@@ -121,7 +81,7 @@ export async function PATCH(request: Request, { params }: Context) {
     );
   } catch {
     return NextResponse.json(
-      { error: "Verification or Document Service unavailable" },
+      { error: "Verification Service unavailable" },
       { status: 502 },
     );
   }

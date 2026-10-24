@@ -11,6 +11,7 @@ import (
 	"idenova/verification/internal/adapters/memory"
 	"idenova/verification/internal/application"
 	"idenova/verification/internal/domain"
+	"idenova/verification/internal/ports"
 )
 
 func TestCreateVerification(t *testing.T) {
@@ -20,7 +21,7 @@ func TestCreateVerification(t *testing.T) {
 		application.NewCreateVerification(repo),
 		application.NewGetVerification(repo),
 		application.NewListVerifications(repo),
-		application.NewUpdateVerification(repo),
+		application.NewUpdateVerification(repo, testDocumentReader{}),
 	)
 
 	mux := http.NewServeMux()
@@ -83,7 +84,7 @@ func TestGetVerification(t *testing.T) {
 		application.NewCreateVerification(repo),
 		application.NewGetVerification(repo),
 		application.NewListVerifications(repo),
-		application.NewUpdateVerification(repo),
+		application.NewUpdateVerification(repo, testDocumentReader{}),
 	)
 
 	mux := http.NewServeMux()
@@ -138,7 +139,7 @@ func TestUpdateVerification(t *testing.T) {
 		application.NewCreateVerification(repo),
 		application.NewGetVerification(repo),
 		application.NewListVerifications(repo),
-		application.NewUpdateVerification(repo),
+		application.NewUpdateVerification(repo, testDocumentReader{}),
 	)
 
 	mux := http.NewServeMux()
@@ -208,7 +209,7 @@ func TestListVerifications(t *testing.T) {
 		application.NewCreateVerification(repo),
 		application.NewGetVerification(repo),
 		application.NewListVerifications(repo),
-		application.NewUpdateVerification(repo),
+		application.NewUpdateVerification(repo, testDocumentReader{}),
 	)
 
 	mux := http.NewServeMux()
@@ -264,5 +265,41 @@ func TestListVerifications(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+type testDocumentReader struct{}
+
+func (testDocumentReader) ListByVerificationID(
+	_ context.Context,
+	_ string,
+) ([]ports.Document, error) {
+	return []ports.Document{
+		{ID: "doc_123", Status: ports.DocumentApproved},
+	}, nil
+}
+
+func TestDocumentPolicyErrorResponse(t *testing.T) {
+	recorder := httptest.NewRecorder()
+
+	writeError(recorder, application.ErrDocumentPolicy)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf(
+			"expected HTTP 409, got %d",
+			recorder.Code,
+		)
+	}
+
+	var response struct {
+		Error string `json:"error"`
+	}
+
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+
+	if response.Error != "Document requirements not satisfied" {
+		t.Errorf("unexpected error message: %s", response.Error)
 	}
 }

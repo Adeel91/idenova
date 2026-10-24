@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"idenova/verification/internal/application"
 	"idenova/verification/internal/domain"
 )
 
@@ -30,6 +31,10 @@ func writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, domain.ErrInvalidTransition):
 		status = http.StatusConflict
 		message = "Invalid verification status transition"
+
+	case errors.Is(err, application.ErrDocumentPolicy):
+		status = http.StatusConflict
+		message = "Document requirements not satisfied"
 
 	default:
 		log.Printf("unexpected verification error: %v", err)
